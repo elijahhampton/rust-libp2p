@@ -1,6 +1,6 @@
 use std::{convert::Infallible, sync::atomic::AtomicUsize};
 
-use async_std::stream::StreamExt;
+use tokio_stream::StreamExt;
 use criterion::{criterion_group, criterion_main, Criterion};
 use libp2p_core::{
     transport::MemoryTransport, InboundUpgrade, Multiaddr, OutboundUpgrade, Transport, UpgradeInfo,

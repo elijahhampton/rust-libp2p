@@ -7,10 +7,13 @@ use libp2p_swarm::{StreamProtocol, Swarm, SwarmEvent};
 use libp2p_swarm_test::SwarmExt;
 use serde::{Deserialize, Serialize};
 use tracing_subscriber::EnvFilter;
+use tokio::{runtime::Builder, task::LocalSet};
 
-#[async_std::test]
+#[tokio::test]
 #[cfg(feature = "cbor")]
 async fn dial_succeeds_after_adding_peers_address() {
+    let task = LocalSet::new();
+
     let _ = tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .try_init();
@@ -18,11 +21,11 @@ async fn dial_succeeds_after_adding_peers_address() {
     let protocols = iter::once((StreamProtocol::new("/ping/1"), ProtocolSupport::Full));
     let config = request_response::Config::default();
 
-    let mut swarm = Swarm::new_ephemeral(|_| {
+    let mut swarm = Swarm::new_ephemeral_tokio(|_| {
         request_response::cbor::Behaviour::<Ping, Pong>::new(protocols.clone(), config.clone())
     });
 
-    let mut swarm2 = Swarm::new_ephemeral(|_| {
+    let mut swarm2 = Swarm::new_ephemeral_tokio(|_| {
         request_response::cbor::Behaviour::<Ping, Pong>::new(protocols.clone(), config.clone())
     });
 
@@ -34,7 +37,7 @@ async fn dial_succeeds_after_adding_peers_address() {
 
     swarm.dial(peer_id2).unwrap();
 
-    async_std::task::spawn(swarm2.loop_on_next());
+    task.spawn_local(swarm2.loop_on_next());
 
     let (connected_peer_id, connected_address) = swarm
         .wait(|event| match event {

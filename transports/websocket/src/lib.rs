@@ -72,11 +72,11 @@ use rw_stream_sink::RwStreamSink;
 /// # use libp2p_websocket as websocket;
 /// # use std::pin::Pin;
 /// #
-/// # #[async_std::main]
+/// # [tokio::main]
 /// # async fn main() {
 ///
 /// let mut transport = websocket::Config::new(
-///     dns::async_std::Transport::system(tcp::async_io::Transport::new(tcp::Config::default()))
+///     dns::tokio::Transport::system(tcp::tokio::Transport::new(tcp::Config::default()))
 ///         .await
 ///         .unwrap(),
 /// );
@@ -115,11 +115,11 @@ use rw_stream_sink::RwStreamSink;
 /// # use libp2p_websocket as websocket;
 /// # use std::pin::Pin;
 /// #
-/// # #[async_std::main]
+/// # #[tokio::main]
 /// # async fn main() {
 ///
 /// let mut transport =
-///     websocket::Config::new(tcp::async_io::Transport::new(tcp::Config::default()));
+///     websocket::Config::new(tcp::tokio::Transport::new(tcp::Config::default()));
 ///
 /// let id = transport
 ///     .listen_on(
@@ -328,8 +328,8 @@ mod tests {
         futures::executor::block_on(connect(a))
     }
 
-    fn new_ws_config() -> Config<tcp::async_io::Transport> {
-        Config::new(tcp::async_io::Transport::new(tcp::Config::default()))
+    fn new_ws_config() -> Config<tcp::tokio::Transport> {
+        Config::new(tcp::tokio::Transport::new(tcp::Config::default()))
     }
 
     async fn connect(listen_addr: Multiaddr) {

@@ -17,7 +17,7 @@
 // # Examples
 //
 // ```no_run
-// use async_std::io;
+// use tokio::io;
 // use futures::prelude::*;
 //
 // use crate::quicksink::Action;
@@ -26,7 +26,7 @@
 //     match action {
 //         Action::Send(x) => stdout.write_all(x).await?,
 //         Action::Flush => stdout.flush().await?,
-//         Action::Close => stdout.close().await?,
+//         Action::Close => stdout.shutdown().await?,
 //     }
 //     Ok::<_, io::Error>(stdout)
 // });
@@ -293,31 +293,28 @@ where
 
 #[cfg(test)]
 mod tests {
-    use async_std::{io, task};
+    use tokio::io::{self, AsyncWriteExt};
     use futures::{channel::mpsc, prelude::*};
 
     use crate::quicksink::{make_sink, Action};
 
-    #[test]
-    fn smoke_test() {
-        task::block_on(async {
+    #[tokio::test]
+    async fn smoke_test() {
             let sink = make_sink(io::stdout(), |mut stdout, action| async move {
                 match action {
                     Action::Send(x) => stdout.write_all(x).await?,
                     Action::Flush => stdout.flush().await?,
-                    Action::Close => stdout.close().await?,
+                    Action::Close => stdout.shutdown().await?,
                 }
                 Ok::<_, io::Error>(stdout)
             });
 
             let values = vec![Ok(&b"hello\n"[..]), Ok(&b"world\n"[..])];
             assert!(stream::iter(values).forward(sink).await.is_ok())
-        })
     }
 
-    #[test]
-    fn replay() {
-        task::block_on(async {
+    #[tokio::test]
+    async fn replay() {
             let (tx, rx) = mpsc::channel(5);
 
             let sink = make_sink(tx, |mut tx, action| async move {
@@ -347,12 +344,10 @@ mod tests {
             let actual = rx.collect::<Vec<_>>().await;
 
             assert_eq!(&expected[..], &actual[..])
-        });
     }
 
-    #[test]
-    fn error_does_not_panic() {
-        task::block_on(async {
+    #[tokio::test]
+    async fn error_does_not_panic() {
             let sink = make_sink(io::stdout(), |mut _stdout, _action| async move {
                 Err(io::Error::new(io::ErrorKind::Other, "oh no"))
             });
@@ -374,6 +369,5 @@ mod tests {
                 Err(crate::quicksink::Error::Closed) => {}
                 _ => panic!("unexpected result: {:?}", result),
             };
-        })
     }
 }

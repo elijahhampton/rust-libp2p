@@ -244,16 +244,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "155a5a185e42c6b77ac7b88a15143d930a9e9727a5b7b77eed417404ab15c247"
 
 [[package]]
-name = "async-attributes"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3203e79f4dd9bdda415ed03cf14dae5a2bf775c683a00f94e9cd1faf0f596e5"
-dependencies = [
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "async-channel"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -406,11 +396,10 @@ dependencies = [
 
 [[package]]
 name = "async-std"
-version = "1.13.0"
+version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c634475f29802fde2b8f0b505b1bd00dfe4df7d4a000f0b36f7671197d5c3615"
+checksum = "730294c1c08c2e0f85759590518f6333f0d5a0a766a27d519c1b244c3dfd8a24"
 dependencies = [
- "async-attributes",
  "async-channel 1.9.0",
  "async-global-executor",
  "async-io",
@@ -2688,7 +2677,6 @@ checksum = "875b3680cb2f8f71bdcf9a30f38d48282f5d3c95cbf9b3fa57269bb5d5c06828"
 name = "libp2p"
 version = "0.55.1"
 dependencies = [
- "async-std",
  "bytes",
  "either",
  "futures",
@@ -2849,7 +2837,6 @@ dependencies = [
 name = "libp2p-dns"
 version = "0.43.0"
 dependencies = [
- "async-std",
  "async-std-resolver",
  "async-trait",
  "futures",
@@ -3003,8 +2990,6 @@ dependencies = [
 name = "libp2p-mdns"
 version = "0.47.0"
 dependencies = [
- "async-io",
- "async-std",
  "futures",
  "hickory-proto",
  "if-watch",
@@ -3032,6 +3017,7 @@ dependencies = [
  "libp2p-swarm-test",
  "memory-stats",
  "sysinfo",
+ "tokio",
  "tracing",
 ]
 
@@ -3058,7 +3044,6 @@ dependencies = [
 name = "libp2p-mplex"
 version = "0.43.1"
 dependencies = [
- "async-std",
  "asynchronous-codec",
  "bytes",
  "criterion",
@@ -3073,6 +3058,7 @@ dependencies = [
  "quickcheck-ext",
  "rand 0.8.5",
  "smallvec",
+ "tokio",
  "tracing",
  "tracing-subscriber",
  "unsigned-varint",
@@ -3212,7 +3198,6 @@ dependencies = [
 name = "libp2p-quic"
 version = "0.12.1"
 dependencies = [
- "async-std",
  "futures",
  "futures-timer",
  "if-watch",
@@ -3258,6 +3243,7 @@ dependencies = [
  "rand 0.8.5",
  "static_assertions",
  "thiserror 2.0.12",
+ "tokio",
  "tracing",
  "tracing-subscriber",
  "web-time 1.1.0",
@@ -3292,7 +3278,6 @@ name = "libp2p-request-response"
 version = "0.28.1"
 dependencies = [
  "anyhow",
- "async-std",
  "async-trait",
  "cbor4ii",
  "futures",
@@ -3306,6 +3291,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
+ "tokio",
  "tracing",
  "tracing-subscriber",
 ]
@@ -3347,7 +3333,6 @@ dependencies = [
 name = "libp2p-swarm"
 version = "0.47.0"
 dependencies = [
- "async-std",
  "criterion",
  "either",
  "fnv",
@@ -3406,7 +3391,6 @@ name = "libp2p-tcp"
 version = "0.43.0"
 dependencies = [
  "async-io",
- "async-std",
  "futures",
  "futures-timer",
  "if-watch",
@@ -3443,7 +3427,6 @@ dependencies = [
 name = "libp2p-uds"
 version = "0.42.0"
 dependencies = [
- "async-std",
  "futures",
  "libp2p-core",
  "tempfile",
@@ -3536,7 +3519,6 @@ dependencies = [
 name = "libp2p-websocket"
 version = "0.45.1"
 dependencies = [
- "async-std",
  "either",
  "futures",
  "futures-rustls",
@@ -3550,6 +3532,7 @@ dependencies = [
  "rw-stream-sink",
  "soketto",
  "thiserror 2.0.12",
+ "tokio",
  "tracing",
  "url",
  "webpki-roots 0.25.4",
@@ -3917,7 +3900,6 @@ dependencies = [
 name = "multistream-select"
 version = "0.13.0"
 dependencies = [
- "async-std",
  "bytes",
  "futures",
  "futures_ringbuf",
@@ -3925,6 +3907,8 @@ dependencies = [
  "quickcheck-ext",
  "rw-stream-sink",
  "smallvec",
+ "tokio",
+ "tokio-util",
  "tracing",
  "tracing-subscriber",
  "unsigned-varint",
@@ -4710,8 +4694,6 @@ version = "0.11.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62e96808277ec6f97351a2380e6c25114bc9e67037775464979f3037c92d05ef"
 dependencies = [
- "async-io",
- "async-std",
  "bytes",
  "futures-io",
  "pin-project-lite",
@@ -5372,10 +5354,10 @@ checksum = "eded382c5f5f786b989652c49544c4877d9f015cc22e145a5ea8ea66c2921cd2"
 name = "rw-stream-sink"
 version = "0.4.0"
 dependencies = [
- "async-std",
  "futures",
  "pin-project",
  "static_assertions",
+ "tokio",
 ]
 
 [[package]]
@@ -6242,9 +6224,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-util"
-version = "0.7.13"
+version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7fcaa8d55a2bdd6b83ace262b016eca0d79ee02818c5c1bcdf0305114081078"
+checksum = "6b9590b93e6fcc1739458317cccd391ad3955e2bde8913edf6f95f9e65a8f034"
 dependencies = [
  "bytes",
  "futures-core",

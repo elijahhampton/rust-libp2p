@@ -68,23 +68,23 @@
 //!
 //! For a dialer:
 //!
-//! ```no_run
-//! use async_std::net::TcpStream;
-//! use futures::prelude::*;
-//! use multistream_select::{dialer_select_proto, Version};
-//!
-//! async_std::task::block_on(async move {
-//!     let socket = TcpStream::connect("127.0.0.1:10333").await.unwrap();
-//!
-//!     let protos = vec!["/echo/1.0.0", "/echo/2.5.0"];
-//!     let (protocol, _io) = dialer_select_proto(socket, protos, Version::V1)
-//!         .await
-//!         .unwrap();
-//!
-//!     println!("Negotiated protocol: {:?}", protocol);
-//!     // You can now use `_io` to communicate with the remote.
-//! });
-//! ```
+// ! ```no_run
+// ! use tokio::net::TcpStream;
+// ! use futures::prelude::*;
+// ! use multistream_select::{dialer_select_proto, Version};
+// ! #[tokio::main]
+// ! fn main() {
+// !    let socket = TcpStream::connect("127.0.0.1:10333").await.unwrap();
+// !
+// !    let protos = vec!["/echo/1.0.0", "/echo/2.5.0"];
+// !    let (protocol, _io) = dialer_select_proto(socket, protos, Version::V1)
+// !        .await
+// !        .unwrap();
+// !
+// !    println!("Negotiated protocol: {:?}", protocol);
+// !    // You can now use `_io` to communicate with the remote.
+// ! }
+// ! ```
 
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 

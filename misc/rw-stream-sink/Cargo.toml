@@ -14,9 +14,8 @@ categories = ["network-programming", "asynchronous"]
 futures = { workspace = true }
 pin-project = "1.1.5"
 static_assertions = "1"
+tokio = { workspace = true }
 
-[dev-dependencies]
-async-std = "1.0"
 
 # Passing arguments to the docsrs builder in order to properly document cfg's. 
 # More information: https://docs.rs/about/builds#cross-compiling

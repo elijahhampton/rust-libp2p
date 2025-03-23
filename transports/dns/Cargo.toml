@@ -24,11 +24,9 @@ tracing = { workspace = true }
 [dev-dependencies]
 libp2p-identity = { workspace = true, features = ["rand"] }
 tokio = { workspace = true, features = ["rt", "time"] }
-async-std-crate = { package = "async-std", version = "1.6" }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
-async-std = ["async-std-resolver"]
 tokio = ["hickory-resolver/tokio-runtime"]
 
 # Passing arguments to the docsrs builder in order to properly document cfg's.

@@ -386,6 +386,7 @@ where
 mod tests {
     use std::io::ErrorKind;
 
+    use tokio::{runtime::Builder, task::{self, LocalSet}};
     use futures::{io::Cursor, prelude::*};
     use quickcheck::*;
 
@@ -489,11 +490,14 @@ mod tests {
     #[test]
     fn writing_reading() {
         fn prop(frames: Vec<Vec<u8>>) -> TestResult {
+            let rt = Builder::new_current_thread().enable_io().build().unwrap();
+            let task = LocalSet::new();
+
             let (client_connection, server_connection) = futures_ringbuf::Endpoint::pair(100, 100);
 
-            async_std::task::block_on(async move {
+            task.block_on(&rt, async {
                 let expected_frames = frames.clone();
-                let server = async_std::task::spawn(async move {
+                let server = task.spawn_local(async move {
                     let mut connec =
                         rw_stream_sink::RwStreamSink::new(LengthDelimited::new(server_connection));
 
@@ -510,7 +514,7 @@ mod tests {
                     }
                 });
 
-                let client = async_std::task::spawn(async move {
+                let client = task.spawn_local(async move {
                     let mut connec = LengthDelimited::new(client_connection);
                     for frame in frames {
                         connec.send(From::from(frame)).await.unwrap();

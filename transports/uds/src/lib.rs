@@ -26,15 +26,15 @@
 //!
 //! # Usage
 //!
-//! The `UdsConfig` transport supports multiaddresses of the form `/unix//tmp/foo`.
+//! The `TokioUdsConfig` transport supports multiaddresses of the form `/unix//tmp/foo`.
 //!
-//! The `UdsConfig` structs implements the `Transport` trait of the `core` library. See the
+//! The `TokioUdsConfig` structs implements the `Transport` trait of the `core` library. See the
 //! documentation of `core` and of libp2p in general to learn how to use the `Transport` trait.
 
 #![cfg(all(
     unix,
     not(target_os = "emscripten"),
-    any(feature = "tokio", feature = "async-std")
+    any(feature = "tokio")
 ))]
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
@@ -205,13 +205,6 @@ macro_rules! codegen {
     };
 }
 
-#[cfg(feature = "async-std")]
-codegen!(
-    "async-std",
-    UdsConfig,
-    |addr| async move { async_std::os::unix::net::UnixListener::bind(&addr).await },
-    async_std::os::unix::net::UnixStream,
-);
 #[cfg(feature = "tokio")]
 codegen!(
     "tokio",
@@ -242,7 +235,7 @@ fn multiaddr_to_path(addr: &Multiaddr) -> Result<PathBuf, ()> {
     }
 }
 
-#[cfg(all(test, feature = "async-std"))]
+#[cfg(test)]
 mod tests {
     use std::{borrow::Cow, path::Path};
 
@@ -253,7 +246,9 @@ mod tests {
         Endpoint, Transport,
     };
 
-    use super::{multiaddr_to_path, UdsConfig};
+    use tokio::io::{AsyncWriteExt, AsyncReadExt};
+
+    use super::{multiaddr_to_path, TokioUdsConfig};
 
     #[test]
     fn multiaddr_to_path_conversion() {
@@ -281,8 +276,9 @@ mod tests {
 
         let (tx, rx) = oneshot::channel();
 
-        async_std::task::spawn(async move {
-            let mut transport = UdsConfig::new().boxed();
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.spawn(async move {
+            let mut transport = TokioUdsConfig::new().boxed();
             transport.listen_on(ListenerId::next(), addr).unwrap();
 
             let listen_addr = transport
@@ -305,8 +301,8 @@ mod tests {
             assert_eq!(buf, [1, 2, 3]);
         });
 
-        async_std::task::block_on(async move {
-            let mut uds = UdsConfig::new();
+        rt.block_on(async move {
+            let mut uds = TokioUdsConfig::new();
             let addr = rx.await.unwrap();
             let mut socket = uds
                 .dial(
@@ -326,7 +322,7 @@ mod tests {
     #[test]
     #[ignore] // TODO: for the moment unix addresses fail to parse
     fn larger_addr_denied() {
-        let mut uds = UdsConfig::new();
+        let mut uds = TokioUdsConfig::new();
 
         let addr = "/unix//foo/bar".parse::<Multiaddr>().unwrap();
         assert!(uds.listen_on(ListenerId::next(), addr).is_err());

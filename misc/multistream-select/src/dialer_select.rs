@@ -209,11 +209,15 @@ where
 #[cfg(test)]
 mod tests {
     use std::time::Duration;
-
-    use async_std::{
-        future::timeout,
+    
+    use tokio::{
+        time::timeout,
         net::{TcpListener, TcpStream},
+        runtime::Builder,
+        task::LocalSet
     };
+    use tokio_util::compat::TokioAsyncReadCompatExt;
+
     use quickcheck::{Arbitrary, Gen, GenRange};
     use tracing::metadata::LevelFilter;
     use tracing_subscriber::EnvFilter;
@@ -223,10 +227,12 @@ mod tests {
 
     #[test]
     fn select_proto_basic() {
+        let task = LocalSet::new();
+
         async fn run(version: Version) {
             let (client_connection, server_connection) = futures_ringbuf::Endpoint::pair(100, 100);
 
-            let server = async_std::task::spawn(async move {
+            let server = tokio::task::spawn_local(async move {
                 let protos = vec!["/proto1", "/proto2"];
                 let (proto, mut io) = listener_select_proto(server_connection, protos)
                     .await
@@ -242,7 +248,7 @@ mod tests {
                 io.flush().await.unwrap();
             });
 
-            let client = async_std::task::spawn(async move {
+            let client = tokio::task::spawn_local(async move {
                 let protos = vec!["/proto3", "/proto2"];
                 let (proto, mut io) = dialer_select_proto(client_connection, protos, version)
                     .await
@@ -262,8 +268,8 @@ mod tests {
             client.await;
         }
 
-        async_std::task::block_on(run(Version::V1));
-        async_std::task::block_on(run(Version::V1Lazy));
+        run(Version::V1);
+        run(Version::V1Lazy);
     }
 
     /// Tests the expected behaviour of failed negotiations.
@@ -275,6 +281,9 @@ mod tests {
             ListenerProtos(listen_protos): ListenerProtos,
             DialPayload(dial_payload): DialPayload,
         ) {
+            let rt = Builder::new_current_thread().enable_io().build().unwrap();
+            let task = LocalSet::new();
+
             let _ = tracing_subscriber::fmt()
                 .with_env_filter(
                     EnvFilter::builder()
@@ -283,12 +292,12 @@ mod tests {
                 )
                 .try_init();
 
-            async_std::task::block_on(async move {
+            task.block_on(&rt, async {
                 let listener = TcpListener::bind("0.0.0.0:0").await.unwrap();
                 let addr = listener.local_addr().unwrap();
 
-                let server = async_std::task::spawn(async move {
-                    let server_connection = listener.accept().await.unwrap().0;
+                let server = task.spawn_local(async move {
+                    let server_connection = listener.accept().await.unwrap().0.compat();
 
                     let io = match timeout(
                         Duration::from_secs(2),
@@ -309,8 +318,8 @@ mod tests {
                     }
                 });
 
-                let client = async_std::task::spawn(async move {
-                    let client_connection = TcpStream::connect(addr).await.unwrap();
+                let client = task.spawn_local(async move {
+                    let client_connection = TcpStream::connect(addr).await.unwrap().compat();
 
                     let mut io = match timeout(
                         Duration::from_secs(2),
@@ -348,12 +357,14 @@ mod tests {
             .quickcheck(prop as fn(_, _, _, _));
     }
 
-    #[async_std::test]
+    #[tokio::test]
     async fn v1_lazy_do_not_wait_for_negotiation_on_poll_close() {
+        let task = LocalSet::new();
+
         let (client_connection, _server_connection) =
             futures_ringbuf::Endpoint::pair(1024 * 1024, 1);
 
-        let client = async_std::task::spawn(async move {
+        let client = task.spawn_local(async move {
             // Single protocol to allow for lazy (or optimistic) protocol negotiation.
             let protos = vec!["/proto1"];
             let (proto, mut io) = dialer_select_proto(client_connection, protos, Version::V1Lazy)
@@ -366,7 +377,7 @@ mod tests {
             io.close().await.unwrap();
         });
 
-        async_std::future::timeout(Duration::from_secs(10), client)
+        timeout(Duration::from_secs(10), client)
             .await
             .unwrap();
     }

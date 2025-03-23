@@ -333,8 +333,8 @@ mod test {
         );
     }
 
-    #[test]
-    fn update_address_on_connect() {
+    #[tokio::test]
+    async fn update_address_on_connect() {
         async fn expect_record_update(
             swarm: &mut Swarm<crate::Behaviour<MemoryStore>>,
             expected_peer: PeerId,
@@ -360,9 +360,8 @@ mod test {
         );
         let mut swarm2 = Swarm::new_ephemeral_tokio(|_| crate::Behaviour::new(store2));
 
-        let rt = tokio::runtime::Runtime::new().unwrap();
-
-        rt.block_on(async {
+      
+       
             let (listen_addr, _) = swarm1.listen().with_memory_addr_external().await;
             let swarm1_peer_id = *swarm1.local_peer_id();
             swarm2.dial(listen_addr.clone()).expect("dial to succeed");
@@ -410,7 +409,7 @@ mod test {
                     .collect::<Vec<_>>()
                     == vec![&new_listen_addr, &listen_addr]
             );
-        })
+        
     }
 
     #[test]
