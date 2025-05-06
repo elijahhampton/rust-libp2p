@@ -33,6 +33,15 @@ type Multihash = multihash::Multihash<64>;
 #[derive(Eq, PartialEq, Copy, Clone)]
 pub struct Fingerprint([u8; 32]);
 
+impl Default for Fingerprint {
+    fn default() -> Self {
+        // For browser-to-browser connections via circuit relay, we might use a default fingerprint
+        // This is because the actual certificate verification will happen during the WebRTC
+        // handshake
+        Fingerprint([0; 32])
+    }
+}
+
 impl Fingerprint {
     pub const FF: Fingerprint = Fingerprint([0xFF; 32]);
 

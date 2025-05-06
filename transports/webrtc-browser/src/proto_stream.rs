@@ -1,22 +1,26 @@
 use std::marker::PhantomData;
 
-use futures::{AsyncReadExt, AsyncWriteExt};
-#[cfg(feature = "relayv2")]
-use libp2p_circuit_relay_v2::StreamInterface;
+use futures::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use prost::Message;
-use crate::{error::Error};
+
+use crate::error::Error;
 
 /// A wrapper around a Stream enabling reads and writes for protobuf messages.
-pub struct ProtobufStream<M> {
-    stream: Box<dyn StreamInterface>,
+
+pub struct ProtobufStream<M, S>
+where
+    S: AsyncRead + AsyncWrite + Unpin + 'static,
+{
+    stream: S,
     _phantom: PhantomData<M>,
 }
 
-impl<M> ProtobufStream<M>
+impl<M, S> ProtobufStream<M, S>
 where
     M: Message + Default,
+    S: AsyncRead + AsyncWrite + Unpin + 'static,
 {
-    pub fn new(stream: Box<dyn StreamInterface>) -> Self {
+    pub fn new(stream: S) -> Self {
         Self {
             stream,
             _phantom: PhantomData,

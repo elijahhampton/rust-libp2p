@@ -8,7 +8,7 @@ mod transport;
 pub mod upgrade;
 
 pub use self::{
-    connection::Connection,
+    connection::{Connection, RtcPeerConnection},
     error::Error,
     stream::Stream,
     transport::{Config, Transport},

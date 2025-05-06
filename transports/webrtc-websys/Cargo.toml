@@ -27,7 +27,7 @@ libp2p-identity = { workspace = true }
 libp2p-webrtc-utils = { workspace = true }
 libp2p-tcp = { path = "../../transports/tcp" }
 libp2p-gossipsub = { workspace = true }
-libp2p-circuit-relay-v2 ={ workspace = true, optional = true }
+libp2p-websocket-websys = { workspace = true }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 send_wrapper = { version = "0.6.0", features = ["futures"] }
@@ -73,7 +73,3 @@ wasm-bindgen-test = "0.3.50"
 
 [lints]
 workspace = true
-
-[features]
-default = ["relayv2"]
-relayv2 = ["libp2p-circuit-relay-v2"]

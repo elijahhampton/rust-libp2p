@@ -20,21 +20,6 @@ use web_sys::{
 use super::{Error, Stream};
 use crate::stream::DropListener;
 
-/// Implementation of the [`ConnectionInterface`] expected by the circuit relay.
-#[cfg(feature = "relayv2")]
-impl libp2p_circuit_relay_v2::ConnectionInterface for Connection {
-    fn new_stream(
-        &mut self,
-        protocol_id: &str,
-    ) -> Result<Box<dyn libp2p_circuit_relay_v2::StreamInterface>, libp2p_circuit_relay_v2::Error>
-    {
-        match self.new_stream(protocol_id) {
-            Ok(stream) => Ok(Box::new(stream)),
-            Err(e) => Err(libp2p_circuit_relay_v2::Error::Connection(e.to_string())),
-        }
-    }
-}
-
 /// A WebRTC Connection.
 ///
 /// All connections need to be [`Send`] which is why some fields are wrapped in [`SendWrapper`].
@@ -59,7 +44,7 @@ pub struct Connection {
 
 impl Connection {
     /// Create a new inner WebRTC Connection
-    pub(crate) fn new(peer_connection: RtcPeerConnection) -> Self {
+    pub fn new(peer_connection: RtcPeerConnection) -> Self {
         // An ondatachannel Future enables us to poll for incoming data channel events in
         // poll_incoming
         let (mut tx_ondatachannel, rx_ondatachannel) = mpsc::channel(4); // we may get more than one data channel opened on a single peer connection
@@ -88,7 +73,7 @@ impl Connection {
             drop_listeners: FuturesUnordered::default(),
             no_drop_listeners_waker: None,
             inbound_data_channels: SendWrapper::new(rx_ondatachannel),
-            _ondatachannel_closure: SendWrapper::new(ondatachannel_closure),
+            _ondatachannel_closure: SendWrapper::new(ondatachannel_closure)
         }
     }
 
@@ -202,12 +187,12 @@ impl StreamMuxer for Connection {
     }
 }
 
-pub(crate) struct RtcPeerConnection {
+pub struct RtcPeerConnection {
     inner: web_sys::RtcPeerConnection,
 }
 
 impl RtcPeerConnection {
-    pub(crate) async fn new(algorithm: String) -> Result<Self, Error> {
+    pub async fn new(algorithm: String) -> Result<Self, Error> {
         let algo: Object = Object::new();
         Reflect::set(&algo, &"name".into(), &"ECDSA".into()).unwrap();
         Reflect::set(&algo, &"namedCurve".into(), &"P-256".into()).unwrap();
@@ -282,7 +267,7 @@ impl RtcPeerConnection {
         Ok(())
     }
 
-    pub(crate) fn local_fingerprint(&self) -> Result<Fingerprint, Error> {
+    pub fn local_fingerprint(&self) -> Result<Fingerprint, Error> {
         let sdp = &self
             .inner
             .local_description()

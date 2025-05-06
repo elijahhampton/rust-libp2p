@@ -96,9 +96,6 @@ pub use libp2p_pnet as pnet;
 #[cfg(feature = "quic")]
 #[cfg(not(target_arch = "wasm32"))]
 pub use libp2p_quic as quic;
-#[cfg(feature = "relayv2")]
-#[doc(inline)]
-pub use libp2p_circuit_relay_v2 as relayv2;
 #[cfg(feature = "relay")]
 #[doc(inline)]
 pub use libp2p_relay as relay;
@@ -129,6 +126,9 @@ pub use libp2p_uds as uds;
 #[cfg(not(target_arch = "wasm32"))]
 #[doc(inline)]
 pub use libp2p_upnp as upnp;
+#[cfg(all(feature = "webrtc-browser", target_arch = "wasm32"))]
+#[doc(inline)]
+pub use libp2p_webrtc_browser as webrtc_browser;
 #[cfg(all(feature = "webrtc-websys", target_arch = "wasm32"))]
 #[doc(inline)]
 pub use libp2p_webrtc_websys as webrtc_websys;

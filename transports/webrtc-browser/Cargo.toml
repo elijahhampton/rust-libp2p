@@ -15,26 +15,24 @@ publish = true
 prost-build = "0.13.5"
 
 [dependencies]
-async-trait = "0.1"
 bytes = "1"
 futures = { workspace = true }
 futures-timer = "3"
-getrandom = { workspace = true, features = ["js"] }
-hex = "0.4.3"
 js-sys = { version = "0.3" }
 libp2p-core = { workspace = true }
+hex = "0.4.3"
+libp2p-relay = { workspace = true }
 libp2p-identity = { workspace = true }
 libp2p-webrtc-utils = { workspace = true }
-libp2p-tcp = { path = "../../transports/tcp" }
-libp2p-gossipsub = { workspace = true }
-libp2p-circuit-relay-v2 = { workspace = true, optional = true, features = ["relayv2"] }
+libp2p-websocket-websys = { workspace = true }
 libp2p-webrtc-websys = { workspace = true }
-serde_json = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-send_wrapper = { version = "0.6.0", features = ["futures"] }
+libp2p-noise = { workspace = true }
+libp2p-yamux = { workspace = true }
+libp2p-swarm = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true, features = ["full"] }
+send_wrapper = { version = "0.6.0", features = ["futures"] }
 tracing = { workspace = true }
+multistream-select = { workspace = true }
 wasm-bindgen = { version = "0.2.90" }
 wasm-bindgen-futures = { version = "0.4.42" }
 web-sys = { version = "0.3.70", features = [
@@ -66,18 +64,15 @@ web-sys = { version = "0.3.70", features = [
   "HtmlDocument",
   "WebSocket"
 ]}
-libp2p-swarm = { workspace = true }
 quick-protobuf = "0.8"
 quick-protobuf-codec = { workspace = true }
 prost = "0.13.5"
-wasm-bindgen-test = "0.3.50"
+tracing-wasm = "0.2.1"
+getrandom = { version = "0.2.15", features = ["js"] }
+asynchronous-codec.workspace = true
 
 [lints]
 workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-
-[features]
-default = ["relayv2"]
-relayv2 = ["libp2p-circuit-relay-v2"]

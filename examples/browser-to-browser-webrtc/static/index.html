@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>libp2p WebRTC Browser-to-Browser Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+        .panel {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            color: #555;
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .connected { color: #4caf50; }
+        .disconnected { color: #f44336; }
+        .connecting { color: #ff9800; }
+        .logs {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #222;
+            color: #f0f0f0;
+            padding: 10px;
+            font-family: monospace;
+            border-radius: 4px;
+        }
+        .messages {
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-family: monospace;
+        }
+        .info-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            width: 120px;
+        }
+        .info-value {
+            flex-grow: 1;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .copy-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        .address-display {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+        .hidden {
+            display: none;
+        }
+        .tab-selector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .tab-selector button {
+            font-size: 16px;
+            padding: 12px 25px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h1>libp2p WebRTC Browser-to-Browser Test</h1>
+        <p>This application tests WebRTC browser-to-browser communication through a circuit relay.</p>
+        
+        <div class="tab-selector">
+            <button id="btn-tab-initiator" class="tab-button active">Tab 1 (Initiator)</button>
+            <button id="btn-tab-receiver" class="tab-button">Tab 2 (Receiver)</button>
+        </div>
+    </div>
+
+    <div id="tab-initiator" class="tab-content active">
+        <div class="panel">
+            <h2>Initiator Setup</h2>
+            <label for="relay-addr-init">Relay Server Address:</label>
+            <input type="text" id="relay-addr-init" value="/ip4/127.0.0.1/tcp/4001/ws">
+            
+            <label for="stun-server-init">STUN Server:</label>
+            <input type="text" id="stun-server-init" value="stun:stun.cloudflare.com:3478">
+            
+            <button id="btn-init-initiator">Initialize and Listen</button>
+            
+            <div class="info-row">
+                <div class="info-label">Local Peer ID:</div>
+                <div class="info-value" id="local-peer-id-init">Not initialized</div>
+                <button id="btn-copy-peer-id-init" class="copy-btn" disabled>Copy</button>
+            </div>
+            
+            <div id="full-addr-container-init" class="hidden">
+                <div class="info-row">
+                    <div class="info-label">Full Address:</div>
+                    <div class="info-value" id="full-addr-init"></div>
+                    <button id="btn-copy-full-addr-init" class="copy-btn">Copy</button>
+                </div>
+                <p><strong>Instructions:</strong> Copy this full address and paste it in Tab 2's "Connect to Address" field.</p>
+            </div>
+            
+            <div class="status" id="init-status-init">Status: Not Initialized</div>
+        </div>
+
+        <div class="panel">
+            <h2>Messages</h2>
+            <label for="message-init">Send Message:</label>
+            <input type="text" id="message-init" placeholder="Enter message" disabled>
+            <button id="btn-send-init" disabled>Send</button>
+            
+            <div style="margin-top: 10px;">
+                <h3>Received Messages:</h3>
+                <div id="messages-init" class="messages"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Logs</h2>
+            <div id="logs-init" class="logs"></div>
+        </div>
+    </div>
+
+    <div id="tab-receiver" class="tab-content">
+        <div class="panel">
+            <h2>Receiver Setup</h2>
+            <label for="stun-server-recv">STUN Server:</label>
+            <input type="text" id="stun-server-recv" value="stun:stun.cloudflare.com:3478">
+            
+            <button id="btn-init-receiver">Initialize</button>
+            
+            <div class="info-row">
+                <div class="info-label">Local Peer ID:</div>
+                <div class="info-value" id="local-peer-id-recv">Not initialized</div>
+            </div>
+            
+            <div class="status" id="init-status-recv">Status: Not Initialized</div>
+        </div>
+
+        <div class="panel">
+            <h2>Connect to Initiator</h2>
+            <label for="full-addr-recv">Full Address from Tab 1:</label>
+            <input type="text" id="full-addr-recv" placeholder="Paste the full address from Tab 1">
+            
+            <button id="btn-dial-recv" disabled>Connect to Initiator</button>
+            
+            <div class="status" id="peer-status-recv">Connection Status: Not Connected</div>
+        </div>
+
+        <div class="panel">
+            <h2>Messages</h2>
+            <label for="message-recv">Send Message:</label>
+            <input type="text" id="message-recv" placeholder="Enter message" disabled>
+            <button id="btn-send-recv" disabled>Send</button>
+            
+            <div style="margin-top: 10px;">
+                <h3>Received Messages:</h3>
+                <div id="messages-recv" class="messages"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Logs</h2>
+            <div id="logs-recv" class="logs"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { initialize, BrowserTransport, generate_peer_id } from './pkg/browser_to_browser_webrtc_example.js';
+
+        // Tab Switching Logic
+        const tabInitiator = document.getElementById('tab-initiator');
+        const tabReceiver = document.getElementById('tab-receiver');
+        const btnTabInitiator = document.getElementById('btn-tab-initiator');
+        const btnTabReceiver = document.getElementById('btn-tab-receiver');
+
+        btnTabInitiator.addEventListener('click', () => {
+            tabInitiator.classList.add('active');
+            tabReceiver.classList.remove('active');
+            btnTabInitiator.classList.add('active');
+            btnTabReceiver.classList.remove('active');
+        });
+
+        btnTabReceiver.addEventListener('click', () => {
+            tabInitiator.classList.remove('active');
+            tabReceiver.classList.add('active');
+            btnTabInitiator.classList.remove('active');
+            btnTabReceiver.classList.add('active');
+        });
+
+        // INITIATOR ELEMENTS
+        const relayAddrInit = document.getElementById('relay-addr-init');
+        const stunServerInit = document.getElementById('stun-server-init');
+        const localPeerIdInit = document.getElementById('local-peer-id-init');
+        const fullAddrInit = document.getElementById('full-addr-init');
+        const fullAddrContainerInit = document.getElementById('full-addr-container-init');
+        const initStatusInit = document.getElementById('init-status-init');
+        const messageInputInit = document.getElementById('message-init');
+        const messagesDivInit = document.getElementById('messages-init');
+        const logsDivInit = document.getElementById('logs-init');
+        const btnInitInitiator = document.getElementById('btn-init-initiator');
+        const btnSendInit = document.getElementById('btn-send-init');
+        const btnCopyPeerIdInit = document.getElementById('btn-copy-peer-id-init');
+        const btnCopyFullAddrInit = document.getElementById('btn-copy-full-addr-init');
+
+        // RECEIVER ELEMENTS
+        const stunServerRecv = document.getElementById('stun-server-recv');
+        const localPeerIdRecv = document.getElementById('local-peer-id-recv');
+        const fullAddrRecv = document.getElementById('full-addr-recv');
+        const initStatusRecv = document.getElementById('init-status-recv');
+        const peerStatusRecv = document.getElementById('peer-status-recv');
+        const messageInputRecv = document.getElementById('message-recv');
+        const messagesDivRecv = document.getElementById('messages-recv');
+        const logsDivRecv = document.getElementById('logs-recv');
+        const btnInitReceiver = document.getElementById('btn-init-receiver');
+        const btnDialRecv = document.getElementById('btn-dial-recv');
+        const btnSendRecv = document.getElementById('btn-send-recv');
+
+        // Global state
+        let initiatorTransport = null;
+        let receiverTransport = null;
+        let initiatorDataChannel = null;
+        let receiverDataChannel = null;
+        let isInitiatorInitialized = false;
+        let isReceiverInitialized = false;
+        let isInitiatorConnected = false;
+        let isReceiverConnected = false;
+
+        // Logging functions
+        function logInitiator(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDivInit.appendChild(logEntry);
+            logsDivInit.scrollTop = logsDivInit.scrollHeight;
+        }
+
+        function logReceiver(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDivRecv.appendChild(logEntry);
+            logsDivRecv.scrollTop = logsDivRecv.scrollHeight;
+        }
+
+        // Initialize WASM module
+        async function initWasm() {
+            try {
+                await init();
+                initialize();
+                logInitiator("WebAssembly module loaded", "info");
+                logReceiver("WebAssembly module loaded", "info");
+            } catch (error) {
+                logInitiator(`Failed to load WebAssembly: ${error}`, "error");
+                logReceiver(`Failed to load WebAssembly: ${error}`, "error");
+            }
+        }
+
+        // INITIATOR: Initialize transport and listen
+        btnInitInitiator.addEventListener('click', async () => {
+            try {
+                logInitiator("Initializing transport...");
+                initiatorTransport = new BrowserTransport(stunServerInit.value);
+                const peerId = initiatorTransport.peer_id();
+                localPeerIdInit.textContent = peerId;
+                
+                // Extract the base relay address (without peer ID)
+                const relayAddrBase = relayAddrInit.value;
+                
+                await initiatorTransport.listen(relayAddrBase);
+                isInitiatorInitialized = true;
+                
+                // Generate and display the full address for the receiver to connect to
+                // /ip4/127.0.0.1/tcp/9001/ws/p2p/12D3KooWPhEuYgAeooQmeDRAWFCGySpGLZBojPd4BB4Tzr8Vbws6
+                const fullAddress = '/ip4/127.0.0.1/tcp/9001/ws/p2p/12D3KooWK5JHLmWKfa2gbXashVmatCK2v9reejZ3GefqwUkW3YRT' //`${relayAddrBase}/p2p/${peerId}/p2p-circuit/webrtc`;
+                fullAddrInit.textContent = fullAddress;
+                fullAddrContainerInit.classList.remove('hidden');
+                
+                initStatusInit.textContent = "Status: Initialized and Listening";
+                initStatusInit.className = "status connected";
+                btnInitInitiator.disabled = true;
+                btnCopyPeerIdInit.disabled = false;
+                
+                logInitiator(`Initialized with Peer ID: ${peerId}`, "info");
+                logInitiator(`Listening on: ${fullAddress}`, "info");
+                
+            } catch (error) {
+                logInitiator(`Initialization failed: ${error}`, "error");
+                initStatusInit.textContent = `Status: Failed - ${error}`;
+                initStatusInit.className = "status disconnected";
+            }
+        });
+
+        // RECEIVER: Initialize transport
+        btnInitReceiver.addEventListener('click', async () => {
+            try {
+                logReceiver("Initializing transport...");
+                receiverTransport = new BrowserTransport(stunServerRecv.value);
+                const peerId = receiverTransport.peer_id();
+                localPeerIdRecv.textContent = peerId;
+                
+                isReceiverInitialized = true;
+                initStatusRecv.textContent = "Status: Initialized";
+                initStatusRecv.className = "status connected";
+                btnInitReceiver.disabled = true;
+                btnDialRecv.disabled = false;
+                
+                logReceiver(`Initialized with Peer ID: ${peerId}`, "info");
+            } catch (error) {
+                logReceiver(`Initialization failed: ${error}`, "error");
+                initStatusRecv.textContent = `Status: Failed - ${error}`;
+                initStatusRecv.className = "status disconnected";
+            }
+        });
+
+        // RECEIVER: Dial initiator
+        btnDialRecv.addEventListener('click', async () => {
+            try {
+                if (!isReceiverInitialized) {
+                    logReceiver("Transport not initialized", "error");
+                    return;
+                }
+                
+                const fullAddress = fullAddrRecv.value;
+                if (!fullAddress) {
+                    logReceiver("Please enter the full address from Tab 1", "warn");
+                    return;
+                }
+                
+                peerStatusRecv.textContent = "Connection Status: Connecting...";
+                peerStatusRecv.className = "status connecting";
+                logReceiver(`Dialing address: ${fullAddress}...`);
+                
+                const result = await receiverTransport.dial(fullAddress);
+                const peerId = result.peerId;
+                receiverDataChannel = result.dataChannel;
+                
+                receiverDataChannel.onopen = () => {
+                    isReceiverConnected = true;
+                    peerStatusRecv.textContent = `Connection Status: Connected to ${peerId}`;
+                    peerStatusRecv.className = "status connected";
+                    btnSendRecv.disabled = false;
+                    messageInputRecv.disabled = false;
+                    logReceiver("Data channel opened", "info");
+                };
+                
+                receiverDataChannel.onmessage = (event) => {
+                    const message = event.data;
+                    const msgElement = document.createElement('div');
+                    msgElement.textContent = `[Received] ${message}`;
+                    msgElement.style.color = '#4caf50';
+                    messagesDivRecv.appendChild(msgElement);
+                    messagesDivRecv.scrollTop = messagesDivRecv.scrollHeight;
+                    logReceiver(`Received: ${message}`, "info");
+                };
+                
+                receiverDataChannel.onclose = () => {
+                    isReceiverConnected = false;
+                    peerStatusRecv.textContent = "Connection Status: Disconnected";
+                    peerStatusRecv.className = "status disconnected";
+                    btnSendRecv.disabled = true;
+                    messageInputRecv.disabled = true;
+                    logReceiver("Data channel closed", "warn");
+                };
+                
+                logReceiver(`Connected to peer ${peerId}`, "info");
+            } catch (error) {
+                peerStatusRecv.textContent = `Connection Status: Failed - ${error}`;
+                peerStatusRecv.className = "status disconnected";
+                logReceiver(`Connection failed: ${error}`, "error");
+            }
+        });
+
+        // INITIATOR: Set up a data channel when a connection is received
+        // TODO: Set this up to work in the transport for incoming connection in listen_on()
+        // It will be called when the initiator receives a connection
+        function setupInitiatorDataChannel(dataChannel) {
+            initiatorDataChannel = dataChannel;
+            
+            initiatorDataChannel.onopen = () => {
+                isInitiatorConnected = true;
+                btnSendInit.disabled = false;
+                messageInputInit.disabled = false;
+                logInitiator("Data channel opened with receiver", "info");
+            };
+            
+            initiatorDataChannel.onmessage = (event) => {
+                const message = event.data;
+                const msgElement = document.createElement('div');
+                msgElement.textContent = `[Received] ${message}`;
+                msgElement.style.color = '#4caf50';
+                messagesDivInit.appendChild(msgElement);
+                messagesDivInit.scrollTop = messagesDivInit.scrollHeight;
+                logInitiator(`Received: ${message}`, "info");
+            };
+            
+            initiatorDataChannel.onclose = () => {
+                isInitiatorConnected = false;
+                btnSendInit.disabled = true;
+                messageInputInit.disabled = true;
+                logInitiator("Data channel closed", "warn");
+            };
+        }
+        
+        // INITIATOR: Send message
+        btnSendInit.addEventListener('click', () => {
+            if (!initiatorDataChannel || initiatorDataChannel.readyState !== 'open') {
+                logInitiator("No open data channel", "warn");
+                return;
+            }
+            
+            const message = messageInputInit.value;
+            if (!message) {
+                logInitiator("Please enter a message", "warn");
+                return;
+            }
+            
+            initiatorDataChannel.send(message);
+            const msgElement = document.createElement('div');
+            msgElement.textContent = `[Sent] ${message}`;
+            msgElement.style.textAlign = 'right';
+            msgElement.style.color = '#4285f4';
+            messagesDivInit.appendChild(msgElement);
+            messagesDivInit.scrollTop = messagesDivInit.scrollHeight;
+            logInitiator(`Sent: ${message}`, "info");
+            messageInputInit.value = '';
+        });
+        
+        // RECEIVER: Send message
+        btnSendRecv.addEventListener('click', () => {
+            if (!receiverDataChannel || receiverDataChannel.readyState !== 'open') {
+                logReceiver("No open data channel", "warn");
+                return;
+            }
+            
+            const message = messageInputRecv.value;
+            if (!message) {
+                logReceiver("Please enter a message", "warn");
+                return;
+            }
+            
+            receiverDataChannel.send(message);
+            const msgElement = document.createElement('div');
+            msgElement.textContent = `[Sent] ${message}`;
+            msgElement.style.textAlign = 'right';
+            msgElement.style.color = '#4285f4';
+            messagesDivRecv.appendChild(msgElement);
+            messagesDivRecv.scrollTop = messagesDivRecv.scrollHeight;
+            logReceiver(`Sent: ${message}`, "info");
+            messageInputRecv.value = '';
+        });
+        
+        // Handle Enter key for sending messages
+        messageInputInit.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && !btnSendInit.disabled) {
+                btnSendInit.click();
+            }
+        });
+        
+        messageInputRecv.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && !btnSendRecv.disabled) {
+                btnSendRecv.click();
+            }
+        });
+        
+        // Copy buttons
+        btnCopyPeerIdInit.addEventListener('click', () => {
+            navigator.clipboard.writeText(localPeerIdInit.textContent)
+                .then(() => logInitiator("Peer ID copied", "info"))
+                .catch(err => logInitiator(`Copy failed: ${err}`, "error"));
+        });
+        
+        btnCopyFullAddrInit.addEventListener('click', () => {
+            navigator.clipboard.writeText(fullAddrInit.textContent)
+                .then(() => logInitiator("Full address copied", "info"))
+                .catch(err => logInitiator(`Copy failed: ${err}`, "error"));
+        });
+        
+        // Initialize on load
+        window.addEventListener('load', initWasm);
+    </script>
+</body>
+</html>

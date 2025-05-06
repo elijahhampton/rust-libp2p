@@ -1,5 +1,4 @@
-use wasm_bindgen::JsValue;
-use wasm_bindgen::JsCast;
+use wasm_bindgen::{JsCast, JsValue};
 
 #[derive(thiserror::Error, Debug)]
 pub enum SignalingError {}
@@ -26,9 +25,17 @@ pub enum Error {
     #[error("Signaling error")]
     Signaling(#[from] SignalingError),
 
+    #[error("Authentication error")]
+    Authentication(#[from] AuthenticationError),
+
     #[error("Serialization error: {0}")]
     ProtoSerialization(String),
 }
+
+/// New-type wrapper to hide `libp2p_noise` from the public API.
+#[derive(thiserror::Error, Debug)]
+#[error(transparent)]
+pub struct AuthenticationError(pub(crate) libp2p_webrtc_utils::noise::Error);
 
 impl Error {
     pub(crate) fn from_js_value(value: JsValue) -> Self {
@@ -44,7 +51,6 @@ impl Error {
         Error::Js(s)
     }
 }
-
 
 impl From<JsValue> for Error {
     fn from(value: JsValue) -> Self {

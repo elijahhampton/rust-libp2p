@@ -27,15 +27,14 @@ mod behaviour;
 mod copy_future;
 mod multiaddr_ext;
 mod priv_client;
-mod protocol;
+pub mod protocol;
 
-mod proto {
+pub mod proto {
     #![allow(unreachable_pub)]
     include!("generated/mod.rs");
-    pub use self::message_v2::pb::mod_StopMessage::Type as StopMessageType;
-    pub(crate) use self::message_v2::pb::{
-        mod_HopMessage::Type as HopMessageType, HopMessage, Limit, Peer, Reservation, Status,
-        StopMessage,
+    pub use self::message_v2::pb::{
+        mod_HopMessage::Type as HopMessageType, mod_StopMessage::Type as StopMessageType,
+        HopMessage, Limit, Peer, Reservation, Status, StopMessage,
     };
 }
 
@@ -64,7 +63,9 @@ pub mod outbound {
 
 /// Everything related to the relay protocol from a client's perspective.
 pub mod client {
-    pub use crate::priv_client::{new, transport::Transport, Behaviour, Connection, Event};
+    pub use crate::priv_client::{
+        new, transport::Transport, Behaviour, Connection, ConnectionState, Event,
+    };
 
     pub mod transport {
         pub use crate::priv_client::transport::Error;

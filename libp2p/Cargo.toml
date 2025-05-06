@@ -35,7 +35,6 @@ full = [
     "pnet",
     "quic",
     "relay",
-    "relayv2",
     "rendezvous",
     "request-response",
     "rsa",
@@ -46,6 +45,7 @@ full = [
     "tokio",
     "uds",
     "wasm-bindgen",
+#    "webrtc-browser",
     "webrtc-websys",
     "websocket-websys",
     "websocket",
@@ -77,7 +77,6 @@ plaintext = ["dep:libp2p-plaintext"]
 pnet = ["dep:libp2p-pnet"]
 quic = ["dep:libp2p-quic"]
 relay = ["dep:libp2p-relay", "libp2p-metrics?/relay"]
-relayv2 = ["dep:libp2p-circuit-relay-v2"]
 rendezvous = ["dep:libp2p-rendezvous"]
 request-response = ["dep:libp2p-request-response"]
 rsa = ["libp2p-identity/rsa"]
@@ -88,6 +87,7 @@ tls = ["dep:libp2p-tls"]
 tokio = [ "libp2p-swarm/tokio", "libp2p-mdns?/tokio", "libp2p-tcp?/tokio", "libp2p-dns?/tokio", "libp2p-quic?/tokio", "libp2p-upnp?/tokio"]
 uds = ["dep:libp2p-uds"]
 wasm-bindgen = [ "futures-timer/wasm-bindgen", "getrandom/js", "libp2p-swarm/wasm-bindgen", "libp2p-gossipsub?/wasm-bindgen"]
+# webrtc-browser = ['dep:libp2p-webrtc-browser']
 webrtc-websys = ['dep:libp2p-webrtc-websys']
 websocket-websys = ["dep:libp2p-websocket-websys"]
 websocket = ["dep:libp2p-websocket"]
@@ -105,7 +105,6 @@ getrandom = { workspace = true } # Explicit dependency to be used in `wasm-bindg
 rw-stream-sink = { workspace = true }
 libp2p-allow-block-list = { workspace = true }
 libp2p-autonat = { workspace = true, optional = true }
-libp2p-circuit-relay-v2 = { workspace = true, optional = true}
 libp2p-connection-limits = { workspace = true }
 libp2p-core = { workspace = true }
 libp2p-dcutr = { workspace = true, optional = true }

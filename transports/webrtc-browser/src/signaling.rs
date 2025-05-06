@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc, sync::mpsc};
 
-use libp2p_circuit_relay_v2::StreamInterface;
+use futures::{AsyncRead, AsyncWrite};
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
@@ -11,8 +11,8 @@ use web_sys::{
 
 use super::ProtobufStream;
 use crate::{
-    pb::{signaling_message, SignalingMessage},
     error::Error,
+    pb::{signaling_message, SignalingMessage},
 };
 
 /// Protocol ID for the WebRTC signaling protocol.
@@ -31,7 +31,7 @@ pub trait Signaling {
     async fn perform_signaling(
         &self,
         connection: &web_sys::RtcPeerConnection,
-        stream: Box<dyn StreamInterface>,
+        stream: impl AsyncRead + AsyncWrite + Unpin + 'static,
         is_initiator: bool,
     ) -> Result<(), Error>;
 }
@@ -58,25 +58,14 @@ impl Signaling for SignalingProtocol {
     async fn perform_signaling(
         &self,
         connection: &web_sys::RtcPeerConnection,
-        stream: Box<dyn StreamInterface>,
+        stream: impl AsyncRead + AsyncWrite + Unpin + 'static,
         is_initiator: bool,
     ) -> Result<(), Error> {
-        let mut pb_stream = ProtobufStream::<SignalingMessage>::new(stream);
+        let mut pb_stream = ProtobufStream::<SignalingMessage, _>::new(stream);
         let (ice_candidate_sender, ice_candidate_receiver) = mpsc::channel::<RtcIceCandidate>();
 
         // Setup callbacks to handle various state changes for peer connections, ice states and
         // signaling state changes.
-
-        // Set a callback to handle ice candidates. Candidates are sent to and handled by the ice
-        // candidate channel receiver
-        let set_onicecandidate_callback =
-            Closure::wrap(Box::new(move |event: RtcPeerConnectionIceEvent| {
-                let Some(candidate) = event.candidate() else {
-                    return;
-                };
-                ice_candidate_sender.send(candidate).unwrap();
-            }) as Box<dyn FnMut(RtcPeerConnectionIceEvent)>);
-        connection.set_onicecandidate(Some(&set_onicecandidate_callback.as_ref().unchecked_ref()));
 
         // Set a callback to handle ice connection state changes
         let states = self.states.clone();
@@ -129,7 +118,39 @@ impl Signaling for SignalingProtocol {
             // Create a data channel to ensure ICE information is shared in the SDP
             let data_channel = connection.create_data_channel("init");
 
-            // Create offer and set local description
+            // Set a callback to handle ice candidates. Candidates are sent to and handled by the
+            // ice candidate channel receiver.
+            // 1. A null candidate means end-of-candidates.
+            // 2. An empty string candidate means end of candidates for this generation
+            // 3. Otherwise this should be a valid candidate object
+            //
+            // Reference: https://www.w3.org/TR/webrtc/#rtcpeerconnectioniceevent
+            let set_onicecandidate_callback =
+                Closure::wrap(Box::new(move |event: RtcPeerConnectionIceEvent| {
+                    let Some(candidate) = event.candidate() else {
+                        return;
+                    };
+                    ice_candidate_sender.send(candidate).unwrap();
+                })
+                    as Box<dyn FnMut(RtcPeerConnectionIceEvent)>);
+            connection
+                .set_onicecandidate(Some(&set_onicecandidate_callback.as_ref().unchecked_ref()));
+
+            // Send ICE candidates to remote peer through the signaling stream
+            for candidate in ice_candidate_receiver.iter() {
+                let message = SignalingMessage {
+                    r#type: signaling_message::Type::IceCandidate as i32,
+                    data: candidate.as_string().unwrap(),
+                };
+
+                pb_stream.write(message).await.map_err(|_| {
+                    Error::ProtoSerialization(
+                        "Failure to write signaling message over stream".to_string(),
+                    )
+                })?;
+            }
+
+            // Create offer
             let offer = JsFuture::from(connection.create_offer()).await?;
             let offer_sdp = js_sys::Reflect::get(&offer, &JsValue::from_str("sdp"))?
                 .as_string()
@@ -138,11 +159,12 @@ impl Signaling for SignalingProtocol {
             let offer_init = RtcSessionDescriptionInit::new(RtcSdpType::Offer);
             offer_init.set_sdp(&offer_sdp);
 
+            // Set off as local description
             JsFuture::from(connection.set_local_description(&offer_init))
                 .await
                 .map_err(|_| Error::Js("Could not set local description".to_string()))?;
 
-            // Send the SDP offer
+            // Write SDP offer to the signaling stream
             let message = SignalingMessage {
                 r#type: signaling_message::Type::SdpOffer as i32,
                 data: offer_sdp,
@@ -153,7 +175,7 @@ impl Signaling for SignalingProtocol {
                 )
             })?;
 
-            // Receive SDP answer, create answer and set remote description
+            // Read SDP answer
             let answer_message = pb_stream.read().await.map_err(|_| {
                 Error::ProtoSerialization(
                     "Failure to read signaling message over stream".to_string(),
@@ -162,25 +184,18 @@ impl Signaling for SignalingProtocol {
             let answer_init = RtcSessionDescriptionInit::new(RtcSdpType::Answer);
             answer_init.set_sdp(&answer_message.data);
 
+            // Set answer as remote description
             JsFuture::from(connection.set_remote_description(&answer_init))
                 .await
                 .map_err(|_| Error::Js("Could not set remote description".to_string()))?;
 
-            // Send ICE candidates to remote peer
-            for candidate in ice_candidate_receiver.iter() {
-                let message = SignalingMessage {
-                    r#type: signaling_message::Type::IceCandidate as i32,
-                    data: candidate.as_string().unwrap(),
-                };
-                pb_stream.write(message).await.map_err(|_| {
-                    Error::ProtoSerialization(
-                        "Failure to write signaling message over stream".to_string(),
-                    )
-                })?;
-            }
-
-            // Receive and add ice candidates from remote peer
+            // Receive and add ice candidates from remote peer until connected
             while let Some(message) = pb_stream.read().await.iter().next() {
+                // Keep reading/adding ice candidates until the connection state is connected
+                if self.states.borrow().peer_connection != RtcPeerConnectionState::Connected {
+                    break;
+                }
+
                 if message.r#type == signaling_message::Type::IceCandidate as i32 {
                     JsFuture::from(
                         connection.add_ice_candidate_with_opt_rtc_ice_candidate_init(Some(
@@ -192,6 +207,7 @@ impl Signaling for SignalingProtocol {
                 }
             }
 
+            // Close the init data channel
             data_channel.close();
         } else {
             // Performs signaling protocol as the role of the remote
