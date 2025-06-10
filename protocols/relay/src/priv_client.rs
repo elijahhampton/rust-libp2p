@@ -390,10 +390,10 @@ impl NetworkBehaviour for Behaviour {
 ///
 /// Internally, this uses a stream to the relay.
 pub struct Connection {
-    pub state: ConnectionState,
+    pub(crate) state: ConnectionState,
 }
 
-pub enum ConnectionState {
+pub(crate) enum ConnectionState {
     InboundAccepting {
         accept: BoxFuture<'static, Result<ConnectionState, Error>>,
     },
