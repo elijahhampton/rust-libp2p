@@ -61,7 +61,6 @@ members = [
     "transports/tcp",
     "transports/tls",
     "transports/uds",
-    "transports/webrtc-browser",
     "transports/webrtc-websys",
     "transports/webrtc",
     "transports/websocket-websys",
@@ -112,7 +111,6 @@ libp2p-tls = { version = "0.6.1", path = "transports/tls" }
 libp2p-uds = { version = "0.42.0", path = "transports/uds" }
 libp2p-upnp = { version = "0.4.0", path = "protocols/upnp" }
 libp2p-webrtc = { version = "0.9.0-alpha", path = "transports/webrtc" }
-libp2p-webrtc-browser = { version = "0.1.0", path = "transports/webrtc-browser"}
 libp2p-webrtc-utils = { version = "0.4.0", path = "misc/webrtc-utils" }
 libp2p-webrtc-websys = { version = "0.4.0", path = "transports/webrtc-websys" }
 libp2p-websocket = { version = "0.45.1", path = "transports/websocket" }

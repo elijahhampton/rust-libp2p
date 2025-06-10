@@ -24,6 +24,7 @@ use crate::stream::DropListener;
 ///
 /// All connections need to be [`Send`] which is why some fields are wrapped in [`SendWrapper`].
 /// This is safe because WASM is single-threaded.
+#[derive(Debug)]
 pub struct Connection {
     /// The [RtcPeerConnection] that is used for the WebRTC Connection
     inner: SendWrapper<RtcPeerConnection>,
@@ -44,7 +45,7 @@ pub struct Connection {
 
 impl Connection {
     /// Create a new inner WebRTC Connection
-    pub fn new(peer_connection: RtcPeerConnection) -> Self {
+    pub(crate) fn new(peer_connection: RtcPeerConnection) -> Self {
         // An ondatachannel Future enables us to poll for incoming data channel events in
         // poll_incoming
         let (mut tx_ondatachannel, rx_ondatachannel) = mpsc::channel(4); // we may get more than one data channel opened on a single peer connection
@@ -73,11 +74,11 @@ impl Connection {
             drop_listeners: FuturesUnordered::default(),
             no_drop_listeners_waker: None,
             inbound_data_channels: SendWrapper::new(rx_ondatachannel),
-            _ondatachannel_closure: SendWrapper::new(ondatachannel_closure)
+            _ondatachannel_closure: SendWrapper::new(ondatachannel_closure),
         }
     }
 
-    pub fn new_stream_from_data_channel(&mut self, data_channel: RtcDataChannel) -> Stream {
+    fn new_stream_from_data_channel(&mut self, data_channel: RtcDataChannel) -> Stream {
         let (stream, drop_listener) = Stream::new(data_channel);
 
         self.drop_listeners.push(drop_listener);
@@ -85,20 +86,6 @@ impl Connection {
             waker.wake()
         }
         stream
-    }
-
-    /// Open a new stream over a [`RtcDataChannel`].
-    pub fn new_stream(&mut self, stream_id: &str) -> Result<Stream, Error> {
-        let data_channel = self.inner.inner.create_data_channel(stream_id);
-        data_channel.set_binary_type(RtcDataChannelType::Arraybuffer);
-
-        let stream = self.new_stream_from_data_channel(data_channel);
-
-        Ok(stream)
-    }
-
-    pub fn rtc_connection(&self) -> web_sys::RtcPeerConnection {
-        self.inner.inner.clone()
     }
 
     /// Closes the Peer Connection.
@@ -187,12 +174,13 @@ impl StreamMuxer for Connection {
     }
 }
 
-pub struct RtcPeerConnection {
+#[derive(Debug)]
+pub(crate) struct RtcPeerConnection {
     inner: web_sys::RtcPeerConnection,
 }
 
 impl RtcPeerConnection {
-    pub async fn new(algorithm: String) -> Result<Self, Error> {
+    pub(crate) async fn new(algorithm: String) -> Result<Self, Error> {
         let algo: Object = Object::new();
         Reflect::set(&algo, &"name".into(), &"ECDSA".into()).unwrap();
         Reflect::set(&algo, &"namedCurve".into(), &"P-256".into()).unwrap();
@@ -213,6 +201,10 @@ impl RtcPeerConnection {
         let inner = web_sys::RtcPeerConnection::new_with_configuration(&config)?;
 
         Ok(Self { inner })
+    }
+
+    pub(crate) fn inner(&self) -> &web_sys::RtcPeerConnection {
+        &self.inner
     }
 
     /// Creates the stream for the initial noise handshake.
@@ -267,7 +259,7 @@ impl RtcPeerConnection {
         Ok(())
     }
 
-    pub fn local_fingerprint(&self) -> Result<Fingerprint, Error> {
+    pub(crate) fn local_fingerprint(&self) -> Result<Fingerprint, Error> {
         let sdp = &self
             .inner
             .local_description()

@@ -736,8 +736,12 @@ dependencies = [
  "libp2p",
  "libp2p-core 0.43.1",
  "libp2p-identity",
- "libp2p-webrtc-browser",
+ "libp2p-relay",
+ "libp2p-swarm",
  "libp2p-webrtc-utils 0.3.0",
+ "libp2p-webrtc-websys",
+ "libp2p-websocket-websys",
+ "tracing",
  "tracing-wasm",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -2763,7 +2767,6 @@ dependencies = [
  "libp2p-tls",
  "libp2p-uds",
  "libp2p-upnp",
- "libp2p-webrtc-browser",
  "libp2p-webrtc-websys",
  "libp2p-websocket",
  "libp2p-websocket-websys",
@@ -3587,40 +3590,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libp2p-webrtc-browser"
-version = "0.1.0"
-dependencies = [
- "asynchronous-codec",
- "bytes",
- "futures",
- "futures-timer",
- "getrandom 0.2.16",
- "hex",
- "js-sys",
- "libp2p-core 0.43.1",
- "libp2p-identity",
- "libp2p-noise 0.46.1",
- "libp2p-relay",
- "libp2p-swarm",
- "libp2p-webrtc-utils 0.4.0",
- "libp2p-webrtc-websys",
- "libp2p-websocket-websys",
- "libp2p-yamux",
- "multistream-select 0.13.0",
- "prost",
- "prost-build",
- "quick-protobuf",
- "quick-protobuf-codec 0.3.1",
- "send_wrapper 0.6.0",
- "thiserror 2.0.12",
- "tracing",
- "tracing-wasm",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
 name = "libp2p-webrtc-utils"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3668,33 +3637,33 @@ dependencies = [
 name = "libp2p-webrtc-websys"
 version = "0.4.0"
 dependencies = [
- "async-trait",
  "bytes",
  "futures",
- "futures-timer",
  "getrandom 0.2.16",
+ "gloo-timers 0.3.0",
  "hex",
  "js-sys",
  "libp2p-core 0.43.1",
- "libp2p-gossipsub",
+ "libp2p-identify",
  "libp2p-identity",
+ "libp2p-noise 0.46.1",
+ "libp2p-ping",
+ "libp2p-relay",
  "libp2p-swarm",
- "libp2p-tcp",
  "libp2p-webrtc-utils 0.4.0",
  "libp2p-websocket-websys",
+ "libp2p-yamux",
+ "multistream-select 0.13.0",
+ "oneshot",
+ "pin-project",
  "prost",
  "prost-build",
- "quick-protobuf",
- "quick-protobuf-codec 0.3.1",
  "send_wrapper 0.6.0",
- "serde",
  "serde_json",
  "thiserror 2.0.12",
- "tokio",
  "tracing",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "wasm-bindgen-test",
  "web-sys",
 ]
 
@@ -4316,6 +4285,12 @@ name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
+
+[[package]]
+name = "oneshot"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4ce411919553d3f9fa53a0880544cda985a112117a0444d5ff1e870a893d6ea"
 
 [[package]]
 name = "oorandom"
@@ -5257,7 +5232,9 @@ dependencies = [
  "clap",
  "futures",
  "libp2p",
+ "rand 0.8.5",
  "tokio",
+ "tracing",
  "tracing-subscriber",
 ]
 

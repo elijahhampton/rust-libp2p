@@ -1,6 +1,6 @@
 [package]
 authors = ["Elijah Hampton <Elijahhamptonj@proton.me>"]
-description = "Example use of the WebRTC transport in a browser wasm environment"
+description = "Example use of WebRTC transport in a browser wasm environment"
 edition.workspace = true
 license = "MIT"
 name = "browser-to-browser-webrtc-example"
@@ -17,30 +17,27 @@ crate-type = ["cdylib"]
 
 [dependencies]
 futures = { workspace = true, default-features = false }
-libp2p-identity = "0.2"
-libp2p-webrtc-utils = "0.3"
+console_error_panic_hook = "0.1"
+tracing = { workspace = true }
+libp2p-swarm = { workspace = true }
+libp2p = { path = "../../libp2p", features = ["relay", "noise", "yamux", "ed25519", "macros", "identify", "ping", "wasm-bindgen"] }
+libp2p-identity = { version = "0.2" }
+libp2p-webrtc-utils = { version = "0.3"}
+libp2p-relay = { workspace = true}
+libp2p-core = { workspace = true}
+libp2p-webrtc-websys = { workspace = true }
+libp2p-websocket-websys = { workspace = true }
+tracing-wasm = "0.2"
+getrandom = { version = "0.2", features = ["js"] }
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = ["RtcPeerConnection", "RtcDataChannel", "RtcConfiguration", "Window", "Navigator", "MediaDevices"] }
 js-sys = "0.3"
-libp2p-core = { workspace = true, default-features = false }
-console_error_panic_hook = "0.1"
-tracing-wasm = "0.2"
-libp2p-webrtc-browser = { workspace = true }
-getrandom = { version = "0.2", features = ["js"] }
-
-[dependencies.libp2p]
-path = "../../libp2p"
-default-features = false
-features = ["wasm-bindgen", "ed25519"]
-
-[patch.crates-io]
-mio = { version = "1.0.3", optional = true }
-polling = { version = "3.7.4", optional = true }
-if-addrs = { version = "0.10.2", optional = true }
-errno = { version = "0.3.11", optional = true }
 
 [profile.release]
 opt-level = 3
 lto = true
 codegen-units = 1
+
+[package.metadata.wasm-pack]
+"wasm-pack" = ["cdylib"]

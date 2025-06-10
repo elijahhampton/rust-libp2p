@@ -3,538 +3,398 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>libp2p WebRTC Browser-to-Browser Test</title>
+    <title>libp2p WebRTC Browser-to-Browser Demo</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
             background-color: #f5f5f5;
         }
-        .panel {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        h1, h2 {
+
+        h1 {
             color: #333;
         }
-        label {
-            font-weight: bold;
-            color: #555;
-            display: block;
-            margin-bottom: 5px;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #4285f4;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 10px;
-            transition: background-color 0.2s;
-        }
-        button:hover {
-            background-color: #3367d6;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        .status {
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        .connected { color: #4caf50; }
-        .disconnected { color: #f44336; }
-        .connecting { color: #ff9800; }
-        .logs {
-            height: 200px;
-            overflow-y: auto;
-            background-color: #222;
-            color: #f0f0f0;
-            padding: 10px;
-            font-family: monospace;
-            border-radius: 4px;
-        }
-        .messages {
-            height: 150px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 10px;
-            font-family: monospace;
-        }
-        .info-row {
+
+        .tabs {
             display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .info-label {
-            font-weight: bold;
-            width: 120px;
-        }
-        .info-value {
-            flex-grow: 1;
-            font-family: monospace;
-            word-break: break-all;
-        }
-        .copy-btn {
-            padding: 4px 8px;
-            font-size: 12px;
-        }
-        .address-display {
-            background-color: #f8f8f8;
-            padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            margin-top: 10px;
-            font-family: monospace;
-        }
-        .hidden {
-            display: none;
-        }
-        .tab-selector {
             margin-bottom: 20px;
-            text-align: center;
+            border-bottom: 2px solid #ddd;
         }
-        .tab-selector button {
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #e0e0e0;
+            border: none;
             font-size: 16px;
-            padding: 12px 25px;
+            margin-right: 5px;
         }
+
+        .tab.active {
+            background: white;
+            border-bottom: 2px solid white;
+            font-weight: bold;
+        }
+
         .tab-content {
             display: none;
+            background: white;
+            padding: 20px;
+            border: 1px solid #ddd;
         }
+
         .tab-content.active {
             display: block;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+        }
+
+        .peer-info {
+            background: #e8f4f8;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .logs {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin: 2px 0;
+        }
+
+        .log-info { color: #0066cc; }
+        .log-success { color: #009900; }
+        .log-error { color: #cc0000; }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        h3 {
+            margin-top: 0;
+            color: #555;
+        }
+
+        .instructions {
+            background: #fffbf0;
+            border: 1px solid #ffe0a0;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .instructions code {
+            background: #f0f0f0;
+            padding: 2px 4px;
+            font-family: monospace;
         }
     </style>
 </head>
 <body>
-    <div class="panel">
-        <h1>libp2p WebRTC Browser-to-Browser Test</h1>
-        <p>This application tests WebRTC browser-to-browser communication through a circuit relay.</p>
-        
-        <div class="tab-selector">
-            <button id="btn-tab-initiator" class="tab-button active">Tab 1 (Initiator)</button>
-            <button id="btn-tab-receiver" class="tab-button">Tab 2 (Receiver)</button>
-        </div>
+    <h1>libp2p WebRTC Browser-to-Browser Demo</h1>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('listener')">Listener</button>
+        <button class="tab" onclick="showTab('dialer')">Dialer</button>
     </div>
 
-    <div id="tab-initiator" class="tab-content active">
-        <div class="panel">
-            <h2>Initiator Setup</h2>
-            <label for="relay-addr-init">Relay Server Address:</label>
-            <input type="text" id="relay-addr-init" value="/ip4/127.0.0.1/tcp/4001/ws">
-            
-            <label for="stun-server-init">STUN Server:</label>
-            <input type="text" id="stun-server-init" value="stun:stun.cloudflare.com:3478">
-            
-            <button id="btn-init-initiator">Initialize and Listen</button>
-            
-            <div class="info-row">
-                <div class="info-label">Local Peer ID:</div>
-                <div class="info-value" id="local-peer-id-init">Not initialized</div>
-                <button id="btn-copy-peer-id-init" class="copy-btn" disabled>Copy</button>
-            </div>
-            
-            <div id="full-addr-container-init" class="hidden">
-                <div class="info-row">
-                    <div class="info-label">Full Address:</div>
-                    <div class="info-value" id="full-addr-init"></div>
-                    <button id="btn-copy-full-addr-init" class="copy-btn">Copy</button>
-                </div>
-                <p><strong>Instructions:</strong> Copy this full address and paste it in Tab 2's "Connect to Address" field.</p>
-            </div>
-            
-            <div class="status" id="init-status-init">Status: Not Initialized</div>
+    <!-- Listener Tab -->
+    <div id="listener-tab" class="tab-content active">
+        <div class="instructions">
+            <strong>Listener Instructions:</strong>
+            <ol>
+                <li>Initialize the listener</li>
+                <li>Enter relay address and click "Listen on Relay"</li>
+                <li>Copy your address and share it with the dialer</li>
+                <li>Wait for connection</li>
+            </ol>
         </div>
 
-        <div class="panel">
-            <h2>Messages</h2>
-            <label for="message-init">Send Message:</label>
-            <input type="text" id="message-init" placeholder="Enter message" disabled>
-            <button id="btn-send-init" disabled>Send</button>
-            
-            <div style="margin-top: 10px;">
-                <h3>Received Messages:</h3>
-                <div id="messages-init" class="messages"></div>
-            </div>
+        <div class="peer-info">
+            <strong>Listener Peer ID:</strong> <span id="listener-peer-id">Not initialized</span>
+            <span class="status disconnected" id="listener-status">Disconnected</span>
         </div>
 
-        <div class="panel">
-            <h2>Logs</h2>
-            <div id="logs-init" class="logs"></div>
+        <div class="section">
+            <h3>Initialize</h3>
+            <button onclick="initializeListener()">Initialize Listener</button>
         </div>
+
+        <div class="section disabled" id="listener-step-2">
+            <h3>Listen on Relay</h3>
+            <input type="text" id="relay-address" placeholder="Relay multiaddr (e.g., /ip4/127.0.0.1/tcp/3000/ws/p2p/...)" />
+            <button onclick="listenOnRelay()">Listen on Relay</button>
+        </div>
+
+        <div class="section disabled" id="listener-step-3">
+            <h3>Your Address</h3>
+            <input type="text" id="listener-address" readonly value="Waiting for relay connection..." />
+            <button onclick="copyListenerAddress()">Copy Address</button>
+        </div>
+
+        <h3>Logs</h3>
+        <div class="logs" id="listener-logs"></div>
     </div>
 
-    <div id="tab-receiver" class="tab-content">
-        <div class="panel">
-            <h2>Receiver Setup</h2>
-            <label for="stun-server-recv">STUN Server:</label>
-            <input type="text" id="stun-server-recv" value="stun:stun.cloudflare.com:3478">
-            
-            <button id="btn-init-receiver">Initialize</button>
-            
-            <div class="info-row">
-                <div class="info-label">Local Peer ID:</div>
-                <div class="info-value" id="local-peer-id-recv">Not initialized</div>
-            </div>
-            
-            <div class="status" id="init-status-recv">Status: Not Initialized</div>
+    <!-- Dialer Tab -->
+    <div id="dialer-tab" class="tab-content">
+        <div class="instructions">
+            <strong>Dialer Instructions:</strong>
+            <ol>
+                <li>Initialize the dialer</li>
+                <li>Get the listener's address from the other tab</li>
+                <li>Paste the address and click "Dial Peer"</li>
+                <li>Start chatting once connected</li>
+            </ol>
         </div>
 
-        <div class="panel">
-            <h2>Connect to Initiator</h2>
-            <label for="full-addr-recv">Full Address from Tab 1:</label>
-            <input type="text" id="full-addr-recv" placeholder="Paste the full address from Tab 1">
-            
-            <button id="btn-dial-recv" disabled>Connect to Initiator</button>
-            
-            <div class="status" id="peer-status-recv">Connection Status: Not Connected</div>
+        <div class="peer-info">
+            <strong>Dialer Peer ID:</strong> <span id="dialer-peer-id">Not initialized</span>
+            <span class="status disconnected" id="dialer-status">Disconnected</span>
         </div>
 
-        <div class="panel">
-            <h2>Messages</h2>
-            <label for="message-recv">Send Message:</label>
-            <input type="text" id="message-recv" placeholder="Enter message" disabled>
-            <button id="btn-send-recv" disabled>Send</button>
-            
-            <div style="margin-top: 10px;">
-                <h3>Received Messages:</h3>
-                <div id="messages-recv" class="messages"></div>
-            </div>
+        <div class="section">
+            <h3>Initialize</h3>
+            <button onclick="initializeDialer()">Initialize Dialer</button>
         </div>
 
-        <div class="panel">
-            <h2>Logs</h2>
-            <div id="logs-recv" class="logs"></div>
+        <div class="section disabled" id="dialer-step-2">
+            <h3>Dial Peer</h3>
+            <input type="text" id="peer-address" placeholder="Paste listener's address here" />
+            <button onclick="dialPeer()">Dial Peer</button>
         </div>
+s
+        <h3>Logs</h3>
+        <div class="logs" id="dialer-logs"></div>
     </div>
 
     <script type="module">
-        import init, { initialize, BrowserTransport, generate_peer_id } from './pkg/browser_to_browser_webrtc_example.js';
+        import init, { BrowserTransport, initialize, generate_peer_id } from './browser_to_browser_webrtc_example.js';
 
-        // Tab Switching Logic
-        const tabInitiator = document.getElementById('tab-initiator');
-        const tabReceiver = document.getElementById('tab-receiver');
-        const btnTabInitiator = document.getElementById('btn-tab-initiator');
-        const btnTabReceiver = document.getElementById('btn-tab-receiver');
+        let listenerTransport = null;
+        let dialerTransport = null;
+        let listenerPeerId = null;
+        let dialerPeerId = null;
+        let relayMultiaddr = null;
 
-        btnTabInitiator.addEventListener('click', () => {
-            tabInitiator.classList.add('active');
-            tabReceiver.classList.remove('active');
-            btnTabInitiator.classList.add('active');
-            btnTabReceiver.classList.remove('active');
-        });
-
-        btnTabReceiver.addEventListener('click', () => {
-            tabInitiator.classList.remove('active');
-            tabReceiver.classList.add('active');
-            btnTabInitiator.classList.remove('active');
-            btnTabReceiver.classList.add('active');
-        });
-
-        // INITIATOR ELEMENTS
-        const relayAddrInit = document.getElementById('relay-addr-init');
-        const stunServerInit = document.getElementById('stun-server-init');
-        const localPeerIdInit = document.getElementById('local-peer-id-init');
-        const fullAddrInit = document.getElementById('full-addr-init');
-        const fullAddrContainerInit = document.getElementById('full-addr-container-init');
-        const initStatusInit = document.getElementById('init-status-init');
-        const messageInputInit = document.getElementById('message-init');
-        const messagesDivInit = document.getElementById('messages-init');
-        const logsDivInit = document.getElementById('logs-init');
-        const btnInitInitiator = document.getElementById('btn-init-initiator');
-        const btnSendInit = document.getElementById('btn-send-init');
-        const btnCopyPeerIdInit = document.getElementById('btn-copy-peer-id-init');
-        const btnCopyFullAddrInit = document.getElementById('btn-copy-full-addr-init');
-
-        // RECEIVER ELEMENTS
-        const stunServerRecv = document.getElementById('stun-server-recv');
-        const localPeerIdRecv = document.getElementById('local-peer-id-recv');
-        const fullAddrRecv = document.getElementById('full-addr-recv');
-        const initStatusRecv = document.getElementById('init-status-recv');
-        const peerStatusRecv = document.getElementById('peer-status-recv');
-        const messageInputRecv = document.getElementById('message-recv');
-        const messagesDivRecv = document.getElementById('messages-recv');
-        const logsDivRecv = document.getElementById('logs-recv');
-        const btnInitReceiver = document.getElementById('btn-init-receiver');
-        const btnDialRecv = document.getElementById('btn-dial-recv');
-        const btnSendRecv = document.getElementById('btn-send-recv');
-
-        // Global state
-        let initiatorTransport = null;
-        let receiverTransport = null;
-        let initiatorDataChannel = null;
-        let receiverDataChannel = null;
-        let isInitiatorInitialized = false;
-        let isReceiverInitialized = false;
-        let isInitiatorConnected = false;
-        let isReceiverConnected = false;
-
-        // Logging functions
-        function logInitiator(message, type = 'info') {
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-${type}`;
-            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logsDivInit.appendChild(logEntry);
-            logsDivInit.scrollTop = logsDivInit.scrollHeight;
-        }
-
-        function logReceiver(message, type = 'info') {
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-${type}`;
-            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logsDivRecv.appendChild(logEntry);
-            logsDivRecv.scrollTop = logsDivRecv.scrollHeight;
-        }
-
-        // Initialize WASM module
         async function initWasm() {
-            try {
-                await init();
-                initialize();
-                logInitiator("WebAssembly module loaded", "info");
-                logReceiver("WebAssembly module loaded", "info");
-            } catch (error) {
-                logInitiator(`Failed to load WebAssembly: ${error}`, "error");
-                logReceiver(`Failed to load WebAssembly: ${error}`, "error");
-            }
+            await init();
+            initialize();
+            log('listener', 'WASM module initialized', 'success');
+            log('dialer', 'WASM module initialized', 'success');
         }
 
-        // INITIATOR: Initialize transport and listen
-        btnInitInitiator.addEventListener('click', async () => {
+        window.showTab = function(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            
+            if (tab === 'listener') {
+                document.querySelector('.tab:first-child').classList.add('active');
+                document.getElementById('listener-tab').classList.add('active');
+            } else {
+                document.querySelector('.tab:last-child').classList.add('active');
+                document.getElementById('dialer-tab').classList.add('active');
+            }
+        };
+
+ 
+        function log(context, message, type = 'info') {
+            const logsId = context === 'listener' ? 'listener-logs' : 'dialer-logs';
+            const logsContainer = document.getElementById(logsId);
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsContainer.appendChild(entry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            
+            console.log(`[${context.toUpperCase()}] ${message}`);
+        }
+
+        function enableSection(id) {
+            document.getElementById(id).classList.remove('disabled');
+        }
+
+        window.initializeListener = async function() {
             try {
-                logInitiator("Initializing transport...");
-                initiatorTransport = new BrowserTransport(stunServerInit.value);
-                const peerId = initiatorTransport.peer_id();
-                localPeerIdInit.textContent = peerId;
+                log('listener', 'Initializing listener...', 'info');
                 
-                // Extract the base relay address (without peer ID)
-                const relayAddrBase = relayAddrInit.value;
+                listenerTransport = BrowserTransport.new();
+                listenerPeerId = listenerTransport.peer_id;
                 
-                await initiatorTransport.listen(relayAddrBase);
-                isInitiatorInitialized = true;
+                document.getElementById('listener-peer-id').textContent = listenerPeerId;
+                log('listener', `Initialized with Peer ID: ${listenerPeerId}`, 'success');
                 
-                // Generate and display the full address for the receiver to connect to
-                // /ip4/127.0.0.1/tcp/9001/ws/p2p/12D3KooWPhEuYgAeooQmeDRAWFCGySpGLZBojPd4BB4Tzr8Vbws6
-                const fullAddress = '/ip4/127.0.0.1/tcp/9001/ws/p2p/12D3KooWK5JHLmWKfa2gbXashVmatCK2v9reejZ3GefqwUkW3YRT' //`${relayAddrBase}/p2p/${peerId}/p2p-circuit/webrtc`;
-                fullAddrInit.textContent = fullAddress;
-                fullAddrContainerInit.classList.remove('hidden');
+                enableSection('listener-step-2');
                 
-                initStatusInit.textContent = "Status: Initialized and Listening";
-                initStatusInit.className = "status connected";
-                btnInitInitiator.disabled = true;
-                btnCopyPeerIdInit.disabled = false;
-                
-                logInitiator(`Initialized with Peer ID: ${peerId}`, "info");
-                logInitiator(`Listening on: ${fullAddress}`, "info");
+                startEventHandler('listener', listenerTransport);
                 
             } catch (error) {
-                logInitiator(`Initialization failed: ${error}`, "error");
-                initStatusInit.textContent = `Status: Failed - ${error}`;
-                initStatusInit.className = "status disconnected";
+                log('listener', `Failed to initialize: ${error}`, 'error');
             }
-        });
+        };
 
-        // RECEIVER: Initialize transport
-        btnInitReceiver.addEventListener('click', async () => {
+        window.initializeDialer = async function() {
             try {
-                logReceiver("Initializing transport...");
-                receiverTransport = new BrowserTransport(stunServerRecv.value);
-                const peerId = receiverTransport.peer_id();
-                localPeerIdRecv.textContent = peerId;
+                log('dialer', 'Initializing dialer...', 'info');
                 
-                isReceiverInitialized = true;
-                initStatusRecv.textContent = "Status: Initialized";
-                initStatusRecv.className = "status connected";
-                btnInitReceiver.disabled = true;
-                btnDialRecv.disabled = false;
+                dialerTransport = BrowserTransport.new();
+                dialerPeerId = dialerTransport.peer_id;
                 
-                logReceiver(`Initialized with Peer ID: ${peerId}`, "info");
+                document.getElementById('dialer-peer-id').textContent = dialerPeerId;
+                log('dialer', `Initialized with Peer ID: ${dialerPeerId}`, 'success');
+                
+                enableSection('dialer-step-2');
+
+                startEventHandler('dialer', dialerTransport);
+                
             } catch (error) {
-                logReceiver(`Initialization failed: ${error}`, "error");
-                initStatusRecv.textContent = `Status: Failed - ${error}`;
-                initStatusRecv.className = "status disconnected";
+                log('dialer', `Failed to initialize: ${error}`, 'error');
             }
-        });
+        };
 
-        // RECEIVER: Dial initiator
-        btnDialRecv.addEventListener('click', async () => {
+        window.listenOnRelay = async function() {
             try {
-                if (!isReceiverInitialized) {
-                    logReceiver("Transport not initialized", "error");
+                relayMultiaddr = document.getElementById('relay-address').value;
+                if (!relayMultiaddr) {
+                    log('listener', 'Please enter a relay address', 'error');
                     return;
                 }
                 
-                const fullAddress = fullAddrRecv.value;
-                if (!fullAddress) {
-                    logReceiver("Please enter the full address from Tab 1", "warn");
+                log('listener', `Creating reservation on relay...`, 'info');
+                await listenerTransport.listen_on_relay(relayMultiaddr);
+                
+            } catch (error) {
+                log('listener', `Failed to listen on relay: ${error}`, 'error');
+            }
+        };
+
+        window.dialPeer = async function() {
+            try {
+                const peerAddress = document.getElementById('peer-address').value;
+                if (!peerAddress) {
+                    log('dialer', 'Please enter the peer address', 'error');
                     return;
                 }
                 
-                peerStatusRecv.textContent = "Connection Status: Connecting...";
-                peerStatusRecv.className = "status connecting";
-                logReceiver(`Dialing address: ${fullAddress}...`);
+                log('dialer', `Dialing peer...`, 'info');
+                await dialerTransport.dial(peerAddress);
                 
-                const result = await receiverTransport.dial(fullAddress);
-                const peerId = result.peerId;
-                receiverDataChannel = result.dataChannel;
-                
-                receiverDataChannel.onopen = () => {
-                    isReceiverConnected = true;
-                    peerStatusRecv.textContent = `Connection Status: Connected to ${peerId}`;
-                    peerStatusRecv.className = "status connected";
-                    btnSendRecv.disabled = false;
-                    messageInputRecv.disabled = false;
-                    logReceiver("Data channel opened", "info");
-                };
-                
-                receiverDataChannel.onmessage = (event) => {
-                    const message = event.data;
-                    const msgElement = document.createElement('div');
-                    msgElement.textContent = `[Received] ${message}`;
-                    msgElement.style.color = '#4caf50';
-                    messagesDivRecv.appendChild(msgElement);
-                    messagesDivRecv.scrollTop = messagesDivRecv.scrollHeight;
-                    logReceiver(`Received: ${message}`, "info");
-                };
-                
-                receiverDataChannel.onclose = () => {
-                    isReceiverConnected = false;
-                    peerStatusRecv.textContent = "Connection Status: Disconnected";
-                    peerStatusRecv.className = "status disconnected";
-                    btnSendRecv.disabled = true;
-                    messageInputRecv.disabled = true;
-                    logReceiver("Data channel closed", "warn");
-                };
-                
-                logReceiver(`Connected to peer ${peerId}`, "info");
             } catch (error) {
-                peerStatusRecv.textContent = `Connection Status: Failed - ${error}`;
-                peerStatusRecv.className = "status disconnected";
-                logReceiver(`Connection failed: ${error}`, "error");
+                log('dialer', `Failed to dial peer: ${error}`, 'error');
             }
-        });
+        };
 
-        // INITIATOR: Set up a data channel when a connection is received
-        // TODO: Set this up to work in the transport for incoming connection in listen_on()
-        // It will be called when the initiator receives a connection
-        function setupInitiatorDataChannel(dataChannel) {
-            initiatorDataChannel = dataChannel;
+        window.copyListenerAddress = function() {
+            const address = document.getElementById('listener-address').value;
+            if (address && address !== 'Waiting for relay connection...') {
+                navigator.clipboard.writeText(address).then(() => {
+                    log('listener', 'Address copied to clipboard', 'success');
+                }).catch(() => {
+                    log('listener', 'Failed to copy to clipboard', 'error');
+                });
+            }
+        };
+
+        async function startEventHandler(context, transport) {
+            log(context, 'Event handler started', 'info');
             
-            initiatorDataChannel.onopen = () => {
-                isInitiatorConnected = true;
-                btnSendInit.disabled = false;
-                messageInputInit.disabled = false;
-                logInitiator("Data channel opened with receiver", "info");
-            };
-            
-            initiatorDataChannel.onmessage = (event) => {
-                const message = event.data;
-                const msgElement = document.createElement('div');
-                msgElement.textContent = `[Received] ${message}`;
-                msgElement.style.color = '#4caf50';
-                messagesDivInit.appendChild(msgElement);
-                messagesDivInit.scrollTop = messagesDivInit.scrollHeight;
-                logInitiator(`Received: ${message}`, "info");
-            };
-            
-            initiatorDataChannel.onclose = () => {
-                isInitiatorConnected = false;
-                btnSendInit.disabled = true;
-                messageInputInit.disabled = true;
-                logInitiator("Data channel closed", "warn");
-            };
+            while (true) {
+                try {
+                    const event = await transport.next_event();
+                    handleTransportEvent(context, event);
+                } catch (error) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
         }
+
+        function handleTransportEvent(context, event) {
+            switch (event.type) {
+                case 'reservationCreated':
+                    if (context === 'listener') {
+                        log(context, 'Reservation created', 'success');
+                        enableSection('listener-step-3');
+                        
+                        const listenerAddr = `${relayMultiaddr}/p2p-circuit/webrtc/p2p/${listenerPeerId}`;
+                        document.getElementById('listener-address').value = listenerAddr;
+                        log(context, `Your address: ${listenerAddr}`, 'success');
+                    }
+                    break;
+                    
+                case 'connectionEstablished':
+                    log(context, `Connected to peer: ${event.peerId}`, 'success');
+                    
+                    const statusEl = document.getElementById(`${context}-status`);
+                    statusEl.textContent = 'Connected';
+                    statusEl.className = 'status connected';
         
-        // INITIATOR: Send message
-        btnSendInit.addEventListener('click', () => {
-            if (!initiatorDataChannel || initiatorDataChannel.readyState !== 'open') {
-                logInitiator("No open data channel", "warn");
-                return;
+                    break;
+                    
+                case 'error':
+                    log(context, `Error: ${event.message}`, 'error');
+                    break;
             }
-            
-            const message = messageInputInit.value;
-            if (!message) {
-                logInitiator("Please enter a message", "warn");
-                return;
-            }
-            
-            initiatorDataChannel.send(message);
-            const msgElement = document.createElement('div');
-            msgElement.textContent = `[Sent] ${message}`;
-            msgElement.style.textAlign = 'right';
-            msgElement.style.color = '#4285f4';
-            messagesDivInit.appendChild(msgElement);
-            messagesDivInit.scrollTop = messagesDivInit.scrollHeight;
-            logInitiator(`Sent: ${message}`, "info");
-            messageInputInit.value = '';
-        });
-        
-        // RECEIVER: Send message
-        btnSendRecv.addEventListener('click', () => {
-            if (!receiverDataChannel || receiverDataChannel.readyState !== 'open') {
-                logReceiver("No open data channel", "warn");
-                return;
-            }
-            
-            const message = messageInputRecv.value;
-            if (!message) {
-                logReceiver("Please enter a message", "warn");
-                return;
-            }
-            
-            receiverDataChannel.send(message);
-            const msgElement = document.createElement('div');
-            msgElement.textContent = `[Sent] ${message}`;
-            msgElement.style.textAlign = 'right';
-            msgElement.style.color = '#4285f4';
-            messagesDivRecv.appendChild(msgElement);
-            messagesDivRecv.scrollTop = messagesDivRecv.scrollHeight;
-            logReceiver(`Sent: ${message}`, "info");
-            messageInputRecv.value = '';
-        });
-        
-        // Handle Enter key for sending messages
-        messageInputInit.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter' && !btnSendInit.disabled) {
-                btnSendInit.click();
-            }
-        });
-        
-        messageInputRecv.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter' && !btnSendRecv.disabled) {
-                btnSendRecv.click();
-            }
-        });
-        
-        // Copy buttons
-        btnCopyPeerIdInit.addEventListener('click', () => {
-            navigator.clipboard.writeText(localPeerIdInit.textContent)
-                .then(() => logInitiator("Peer ID copied", "info"))
-                .catch(err => logInitiator(`Copy failed: ${err}`, "error"));
-        });
-        
-        btnCopyFullAddrInit.addEventListener('click', () => {
-            navigator.clipboard.writeText(fullAddrInit.textContent)
-                .then(() => logInitiator("Full address copied", "info"))
-                .catch(err => logInitiator(`Copy failed: ${err}`, "error"));
-        });
-        
-        // Initialize on load
+        }
+
         window.addEventListener('load', initWasm);
     </script>
 </body>
