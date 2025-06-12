@@ -9,9 +9,9 @@ mod transport;
 mod upgrade;
 
 pub use self::{
+    browser::{Config as BrowserConfig, Transport as BrowserTransport},
     connection::Connection,
     error::Error,
     stream::Stream,
     transport::{Config, Transport},
-    browser::{Transport as BrowserTransport, Config as BrowserConfig}
 };
